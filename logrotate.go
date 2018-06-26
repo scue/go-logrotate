@@ -33,6 +33,7 @@ func New(filename, cron string, count int) *RotateWriter {
 		log.Println(`RotateWriter rotate error:`, err)
 		return nil
 	}
+	cleanOlderFiles(filename, count)
 	return writer
 }
 
