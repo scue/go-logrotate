@@ -33,7 +33,6 @@ func New(filename, cron string, count int) *RotateWriter {
 		log.Println(`RotateWriter rotate error:`, err)
 		return nil
 	}
-	cleanOlderFiles(filename, count)
 	return writer
 }
 
@@ -67,6 +66,9 @@ func (writer *RotateWriter) rotate() (err error) {
 
 	// Create a file
 	writer.fp, err = os.Create(writer.filename)
+
+	// Clean older files
+	cleanOlderFiles(writer.filename, writer.count)
 	return
 }
 
@@ -100,7 +102,7 @@ func cleanOlderFiles(filename string, count int) {
 	}
 
 	// remove history logs
-	sort.Strings(historyLogs)
+	sort.Sort(sort.Reverse(sort.StringSlice(historyLogs)))
 	for i := count; i < len(historyLogs); i++ {
 		os.Remove(historyLogs[i])
 	}
@@ -112,7 +114,6 @@ func (writer *RotateWriter) CronTask() {
 	c.AddFunc(writer.cron, func() {
 		log.Println(`CronTask start ...`)
 		writer.rotate()
-		cleanOlderFiles(writer.filename, writer.count)
 	})
 	c.Start()
 	defer c.Stop()
