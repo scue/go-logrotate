@@ -1,7 +1,9 @@
 package logrotate
 
 import (
+	"compress/gzip"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -42,6 +44,22 @@ func (writer *RotateWriter) Write(output []byte) (int, error) {
 	return writer.fp.Write(output)
 }
 
+func compress(name string) (e error) {
+	gz := fmt.Sprintf("%s.gz", name)
+	f, e := os.Create(gz)
+	if e != nil {
+		return
+	}
+	w := gzip.NewWriter(f)
+	defer w.Close()
+	r, e := os.Open(name)
+	_, e = io.Copy(w, r)
+	if e != nil {
+		return
+	}
+	return os.Remove(name)
+}
+
 func (writer *RotateWriter) rotate() (err error) {
 	writer.lock.Lock()
 	defer writer.lock.Unlock()
@@ -62,6 +80,7 @@ func (writer *RotateWriter) rotate() (err error) {
 		if err != nil {
 			return
 		}
+		go compress(name)
 	}
 
 	// Create a file
