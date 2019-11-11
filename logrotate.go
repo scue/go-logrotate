@@ -46,13 +46,26 @@ func (writer *RotateWriter) Write(output []byte) (int, error) {
 
 func compress(name string) (e error) {
 	gz := fmt.Sprintf("%s.gz", name)
+
+	// create gz
 	f, e := os.Create(gz)
 	if e != nil {
 		return
 	}
+	defer f.Close()
+
+	// writer
 	w := gzip.NewWriter(f)
 	defer w.Close()
+
+	// reader
 	r, e := os.Open(name)
+	if e != nil {
+		return
+	}
+	defer r.Close()
+
+	// copy
 	_, e = io.Copy(w, r)
 	if e != nil {
 		return
